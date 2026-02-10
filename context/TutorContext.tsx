@@ -1,75 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ConceptMastery, DoubtEntry, LearnerProfile, TutorState } from '../types';
 
 // ============================================================================
-// TYPES
+// CONTEXT TYPE
 // ============================================================================
-
-export interface LearnerProfile {
-    id: string;
-    name: string;
-    mathComfort: 'visual' | 'symbolic' | 'balanced';
-    codingLevel: 'beginner' | 'intermediate' | 'advanced';
-    pace: 'slow' | 'normal' | 'fast';
-    interests: string[];
-    createdAt: Date;
-}
-
-export interface LessonProgress {
-    lessonId: string;
-    startedAt: Date;
-    completedAt?: Date;
-    timeSpentSeconds: number;
-    challengeAttempts: number;
-    challengeSuccesses: number;
-    masteryLevel: 'none' | 'learning' | 'practiced' | 'mastered';
-    doubtsAsked: number;
-}
-
-export interface ConceptMastery {
-    conceptId: string;
-    conceptName: string;
-    masteryLevel: number; // 0-100
-    lastPracticed?: Date;
-    relatedDoubts: string[];
-}
-
-export interface DoubtEntry {
-    id: string;
-    question: string;
-    answer: string;
-    lessonId: string;
-    lessonTitle: string;
-    timestamp: Date;
-    helpful: boolean | null;
-}
-
-export interface TutorState {
-    // Learner Profile
-    profile: LearnerProfile;
-
-    // Progress
-    completedLessons: string[];
-    currentLayer: number;
-    totalXP: number;
-
-    // Mastery
-    conceptMastery: Map<string, ConceptMastery>;
-
-    // Doubt History
-    doubtHistory: DoubtEntry[];
-
-    // Current Session
-    currentLessonId: string | null;
-    currentStepIndex: number;
-    currentStepStartTime: Date;
-    lastActivityTime: Date;
-    sessionStartTime: Date;
-
-    // Adaptive State
-    isStruggling: boolean;
-    consecutiveFailures: number;
-    consecutiveSuccesses: number;
-}
 
 interface TutorContextType {
     state: TutorState;
@@ -117,7 +51,7 @@ const defaultState: TutorState = {
     completedLessons: [],
     currentLayer: 0,
     totalXP: 0,
-    conceptMastery: new Map(),
+    conceptMastery: new Map<string, ConceptMastery>(),
     doubtHistory: [],
     currentLessonId: null,
     currentStepIndex: 0,
@@ -160,6 +94,8 @@ export const TutorProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     ...parsed,
                     conceptMastery: new Map(parsed.conceptMastery || []),
                     sessionStartTime: new Date(),
+                    currentStepStartTime: new Date(),
+                    lastActivityTime: new Date(),
                 };
             }
         } catch (e) {
@@ -256,17 +192,15 @@ export const TutorProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const updateConceptMastery = (conceptId: string, conceptName: string, delta: number) => {
         setState(prev => {
             const newMastery = new Map(prev.conceptMastery);
-            const existing = newMastery.get(conceptId) || {
+            const existing = prev.conceptMastery.get(conceptId);
+            const updated: ConceptMastery = {
                 conceptId,
                 conceptName,
-                masteryLevel: 0,
-                relatedDoubts: [],
-            };
-            newMastery.set(conceptId, {
-                ...existing,
-                masteryLevel: Math.min(100, Math.max(0, existing.masteryLevel + delta)),
+                masteryLevel: existing ? Math.min(100, Math.max(0, existing.masteryLevel + delta)) : Math.min(100, Math.max(0, delta)),
                 lastPracticed: new Date(),
-            });
+                relatedDoubts: existing ? existing.relatedDoubts : [],
+            };
+            newMastery.set(conceptId, updated);
             return { ...prev, conceptMastery: newMastery };
         });
     };
@@ -274,6 +208,9 @@ export const TutorProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Adaptive Context
     const getAdaptiveContext = (): string => {
         const { profile, completedLessons, isStruggling, consecutiveSuccesses, doubtHistory } = state;
+
+        const timeOnStep = (new Date().getTime() - new Date(state.currentStepStartTime).getTime()) / 1000;
+        const inactivitySeconds = (new Date().getTime() - new Date(state.lastActivityTime).getTime()) / 1000;
 
         let context = `
 LEARNER PROFILE:
@@ -319,7 +256,7 @@ HISTORY:
     };
 
     const getTimeOnStep = () => {
-        return (new Date().getTime() - state.currentStepStartTime.getTime()) / 1000;
+        return (new Date().getTime() - new Date(state.currentStepStartTime).getTime()) / 1000;
     };
 
     const value: TutorContextType = {

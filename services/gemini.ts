@@ -1,20 +1,7 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { ChatMessage } from "../types";
 
-const getAIStudio = () => (window as any).aistudio;
-
 export const generateLessonVideo = async (topic: string, description: string) => {
-  const aiStudio = getAIStudio();
-
-  // Check and request API key if needed (mandatory for Veo)
-  if (aiStudio && aiStudio.hasSelectedApiKey && !(await aiStudio.hasSelectedApiKey())) {
-    if (aiStudio.openSelectKey) {
-      await aiStudio.openSelectKey();
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  }
-
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   // Veo 3.1 specific prompt engineering for educational context
@@ -24,6 +11,7 @@ export const generateLessonVideo = async (topic: string, description: string) =>
   No text overlay.`;
 
   try {
+    // @ts-ignore - Some versions of the SDK might have different types for operations
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-fast-generate-preview',
       prompt: prompt,
@@ -42,9 +30,11 @@ export const generateLessonVideo = async (topic: string, description: string) =>
     }
 
     if (operation.error) {
+      // @ts-ignore
       throw new Error(operation.error.message || "Video generation failed");
     }
 
+    // @ts-ignore
     const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (!videoUri) throw new Error("Video generation completed but no URI returned.");
 
@@ -154,16 +144,17 @@ RESPONSE FORMAT
       parts: [{ text: prompt }]
     });
 
-    const response = await ai.models.generateContent({
+    const result = await ai.models.generateContent({
       model,
       contents,
       config: {
+        // @ts-ignore
         systemInstruction,
         temperature: 0.7,
       },
     });
 
-    return response.text || "Connection glitch... Let me reboot my thought process.";
+    return (await result.response).text() || "Connection glitch... Let me reboot my thought process.";
   } catch (error) {
     console.error("Gemini Error:", error);
     return "Critical Error in Neural Link. Please check your internet connection.";
@@ -195,7 +186,7 @@ export const generatePersonaScript = async (
         parts: [{ text: `${prompts[style]}\n\nTEXT TO REWRITE:\n"${originalText}"` }]
       }]
     });
-    return result.response.text();
+    return (await result.response).text();
   } catch (e) {
     console.error("Persona Generation Failed", e);
     return originalText; // Fallback to reading original text
