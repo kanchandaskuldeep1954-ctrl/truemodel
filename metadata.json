@@ -1,0 +1,7 @@
+{
+  "name": "ZeroToHero AI Platform",
+  "description": "A comprehensive, interactive AI/ML learning platform teaching everything from absolute zero to GPT-level expertise with real-time simulations and an integrated AI tutor.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
