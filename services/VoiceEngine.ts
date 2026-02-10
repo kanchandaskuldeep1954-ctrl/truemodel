@@ -1,77 +1,110 @@
-import { KokoroTTS } from 'kokoro-js';
 
 class VoiceEngineService {
-    private tts: any = null;
+    private worker: Worker | null = null;
     private isLoading = false;
+    private isModelReady = false;
     private audioContext: AudioContext | null = null;
     private currentSource: AudioBufferSourceNode | null = null;
-
-    // Standard American Female voice
-    // Options: af_bella, af_sarah, am_adam, am_michael, bf_emma, bm_george, etc.
     private defaultVoice = "af_bella";
+    private pendingResolve: ((value: any) => void) | null = null;
+    private onEndCallback: (() => void) | null = null;
 
     constructor() {
         if (typeof window !== 'undefined') {
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            this.initWorker();
+        }
+    }
+
+    private initWorker() {
+        try {
+            // Vite pattern for importing workers
+            this.worker = new Worker(new URL('./voiceWorker.ts', import.meta.url), {
+                type: 'module'
+            });
+
+            this.worker.onmessage = async (e) => {
+                const { type, audio, sampling_rate, error } = e.data;
+
+                if (type === 'init-complete') {
+                    console.log('VoiceEngine: Worker initialized model');
+                    this.isModelReady = true;
+                    this.isLoading = false;
+                } else if (type === 'generate-complete') {
+                    console.log('VoiceEngine: Generation complete');
+                    if (audio && sampling_rate) {
+                        await this.playAudio(audio, sampling_rate, this.onEndCallback);
+                    }
+                    if (this.pendingResolve) {
+                        this.pendingResolve(true);
+                        this.pendingResolve = null;
+                    }
+                } else if (type === 'error') {
+                    console.error('VoiceEngine: Worker error', error);
+                    this.isLoading = false;
+                    if (this.pendingResolve) {
+                        this.pendingResolve(false);
+                        this.pendingResolve = null;
+                    }
+                    if (this.onEndCallback) this.onEndCallback();
+                }
+            };
+        } catch (e) {
+            console.error('VoiceEngine: Failed to create worker', e);
         }
     }
 
     async init() {
-        if (this.tts || this.isLoading) return;
+        if (this.isModelReady || this.isLoading || !this.worker) return;
 
-        try {
-            this.isLoading = true;
-            console.log('VoiceEngine: Loading model...');
-
-            // Load the quantized model from Hugging Face
-            // This is ~80MB and will be cached in the browser
-            this.tts = await KokoroTTS.from_pretrained("onnx-community/Kokoro-82M-v1.0-ONNX", {
-                dtype: "q8", // Quantized for 4x smaller size, same quality
-            });
-
-            console.log('VoiceEngine: Model loaded!');
-        } catch (error) {
-            console.error('VoiceEngine: Failed to load model', error);
-        } finally {
-            this.isLoading = false;
-        }
+        this.isLoading = true;
+        this.worker.postMessage({ type: 'init', dtype: 'q8' });
     }
 
     async speak(text: string, voiceId?: string, onEnd?: () => void) {
-        if (!this.tts) await this.init();
-        if (!this.tts) return;
-
-        // Stop current audio if playing
-        this.stop();
-
-        try {
-            console.log('VoiceEngine: Generating speech...');
-            const audio = await this.tts.generate(text, {
-                voice: voiceId || this.defaultVoice,
-            });
-
-            if (audio && audio.audio) {
-                await this.playAudio(audio.audio, audio.sampling_rate, onEnd);
+        if (!this.isModelReady) {
+            await this.init();
+            // Wait for init if not ready
+            if (!this.isModelReady) {
+                await new Promise(resolve => {
+                    const check = setInterval(() => {
+                        if (this.isModelReady) {
+                            clearInterval(check);
+                            resolve(true);
+                        }
+                    }, 500);
+                });
             }
-        } catch (error) {
-            console.error('VoiceEngine: Failed to generate speech', error);
-            if (onEnd) onEnd();
         }
+
+        this.stop();
+        this.onEndCallback = onEnd || null;
+
+        return new Promise((resolve) => {
+            this.pendingResolve = resolve;
+            this.worker?.postMessage({
+                type: 'generate',
+                text,
+                voiceId: voiceId || this.defaultVoice
+            });
+        });
     }
 
     private async playAudio(audioData: Float32Array, sampleRate: number, onEnd?: () => void) {
         if (!this.audioContext) return;
 
-        // Create AudioBuffer
+        // Ensure AudioContext is resumed (browser policy)
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+
         const buffer = this.audioContext.createBuffer(1, audioData.length, sampleRate);
         buffer.getChannelData(0).set(audioData);
 
-        // Create source
         this.currentSource = this.audioContext.createBufferSource();
         this.currentSource.buffer = buffer;
         this.currentSource.connect(this.audioContext.destination);
 
-        // Handle onEnd
         this.currentSource.onended = () => {
             this.currentSource = null;
             if (onEnd) onEnd();
@@ -84,15 +117,13 @@ class VoiceEngineService {
         if (this.currentSource) {
             try {
                 this.currentSource.stop();
-            } catch (e) {
-                // Ignore errors if already stopped
-            }
+            } catch (e) { }
             this.currentSource = null;
         }
     }
 
     isReady() {
-        return !!this.tts;
+        return this.isModelReady;
     }
 }
 
