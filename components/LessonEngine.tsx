@@ -13,6 +13,11 @@ import {
     LogicChallenge
 } from './lessons/Part1/LogicComponents';
 import {
+    ManualSwitchViz,
+    TransistorViz,
+    HardwareGateViz
+} from './lessons/Part1/PhysicalComponents';
+import {
     FunctionIntroAnim,
     FunctionPlayground,
     FunctionChallenge
@@ -340,6 +345,12 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
                                 {currentStep.componentId === 'binary-challenge-5' && (
                                     <BinaryChallenge5 onComplete={handleStepComplete} />
                                 )}
+
+                                {/* Layer 0: Physical Hardware */}
+                                {currentStep.componentId === 'manual-switch-viz' && <ManualSwitchViz onComplete={handleStepComplete} />}
+                                {currentStep.componentId === 'transistor-viz' && <TransistorViz onComplete={handleStepComplete} />}
+                                {currentStep.componentId === 'hardware-gate-and' && <HardwareGateViz type="SERIES" onComplete={handleStepComplete} />}
+                                {currentStep.componentId === 'hardware-gate-or' && <HardwareGateViz type="PARALLEL" onComplete={handleStepComplete} />}
 
                                 {/* Logic Gates Components */}
                                 {currentStep.componentId === 'logic-intro-anim' && <LogicIntroAnim />}
