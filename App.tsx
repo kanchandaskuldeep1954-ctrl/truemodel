@@ -5,21 +5,21 @@ import { Lesson, Part } from './types';
 import { AITutor } from './components/AITutor';
 import { ConceptVideoPlayer } from './components/ConceptVideoPlayer';
 import { LessonEngine } from './components/LessonEngine';
+import { useTutor } from './context/TutorContext';
 
 const App: React.FC = () => {
+  const tutor = useTutor();
   const [activePart, setActivePart] = useState<Part>(COURSE_DATA[0]);
   const [activeLesson, setActiveLesson] = useState<Lesson>(COURSE_DATA[0].modules[0].lessons[0]);
-  const [userXP, setUserXP] = useState(0);
-  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
+
+  const { completedLessons, totalXP: userXP } = tutor.state;
 
   // Gamification Logic
   const handleComplete = () => {
     // 1. Mark as complete if not already
     if (!completedLessons.includes(activeLesson.id)) {
-      setCompletedLessons(prev => [...prev, activeLesson.id]);
-      setUserXP(prev => prev + activeLesson.xpReward);
-
+      tutor.completeLesson(activeLesson.id, activeLesson.xpReward);
       setShowLevelUp(true);
       setTimeout(() => setShowLevelUp(false), 3000);
     }
@@ -182,7 +182,11 @@ const App: React.FC = () => {
           {/* New Lesson Engine Check */}
           {activeLesson.steps && activeLesson.steps.length > 0 ? (
             <div className="absolute inset-0 bg-slate-950 z-10 flex flex-col">
-              <LessonEngine lesson={activeLesson} onComplete={handleComplete} />
+              <LessonEngine
+                key={activeLesson.id}
+                lesson={activeLesson}
+                onComplete={handleComplete}
+              />
             </div>
           ) : (
             <>

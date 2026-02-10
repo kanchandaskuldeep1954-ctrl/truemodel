@@ -216,6 +216,7 @@ const renderInline = (text: string): React.ReactNode => {
 export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }) => {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+    const [isFinishing, setIsFinishing] = useState(false);
     const hasInterjected = useRef<Record<string, boolean>>({});
     const tutor = useTutor();
 
@@ -289,7 +290,12 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
     const handleNext = () => {
         if (canAdvance) {
             if (isLastStep) {
-                onComplete();
+                // Show celebration before advancing
+                setIsFinishing(true);
+                setTimeout(() => {
+                    setIsFinishing(false);
+                    onComplete();
+                }, 2000);
             } else {
                 setCurrentStepIndex(prev => prev + 1);
             }
@@ -608,17 +614,61 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
 
                             <button
                                 onClick={handleNext}
-                                disabled={!canAdvance}
+                                disabled={!canAdvance || isFinishing}
                                 className={`
                         px-8 py-3 rounded-xl font-bold uppercase tracking-wider transition-all
-                        ${canAdvance
+                        ${canAdvance && !isFinishing
                                         ? 'bg-white text-black hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.2)]'
                                         : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
                     `}
                             >
-                                {isLastStep ? 'Finish Level' : 'Continue'} →
+                                {isFinishing ? 'Success! 🎊' : isLastStep ? 'Finish Level' : 'Continue'} →
                             </button>
                         </div>
+
+                        {/* Success Celebration Overlay */}
+                        <AnimatePresence>
+                            {isFinishing && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 1.2 }}
+                                    className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md"
+                                >
+                                    <motion.div
+                                        animate={{
+                                            rotate: [0, 10, -10, 10, 0],
+                                            scale: [1, 1.2, 1]
+                                        }}
+                                        transition={{ duration: 0.5, repeat: 3 }}
+                                        className="text-8xl mb-6"
+                                    >
+                                        🏆
+                                    </motion.div>
+                                    <h2 className="text-4xl font-black text-white mb-2">LESSON COMPLETE!</h2>
+                                    <p className="text-indigo-400 font-mono tracking-widest">+{lesson.xpReward} XP EARNED</p>
+
+                                    <motion.div
+                                        className="mt-8 flex gap-2"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.5 }}
+                                    >
+                                        {[...Array(5)].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                animate={{
+                                                    y: [0, -20, 0],
+                                                    opacity: [1, 0.5, 1]
+                                                }}
+                                                transition={{ duration: 1, repeat: Infinity, delay: i * 0.1 }}
+                                                className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"
+                                            />
+                                        ))}
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                     </motion.div>
                 </AnimatePresence>
