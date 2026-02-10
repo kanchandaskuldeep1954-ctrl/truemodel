@@ -26,7 +26,8 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({ text }) => {
             // If Improv mode, rewrite the text using Gemini
             if (mode === 'Improv') {
                 console.log('VoiceControl: Generating persona script...');
-                const script = await generatePersonaScript(text, 'Tutor');
+                const context = tutor.getAdaptiveContext();
+                const script = await generatePersonaScript(text, 'Tutor', context);
                 if (script) textToSpeak = script;
             }
 

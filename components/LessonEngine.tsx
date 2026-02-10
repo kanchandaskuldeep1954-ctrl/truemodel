@@ -99,6 +99,9 @@ import { LstmViz } from './lessons/Part8/LstmViz';
 import { QkvViz } from './lessons/Part8/QkvViz';
 import { TokenPredictionViz } from './lessons/Part8/TokenPredictionViz';
 import { VoiceControl } from './VoiceControl';
+import { useTutor } from '../context/TutorContext';
+import { generatePersonaScript } from '../services/groq';
+import { VoiceEngine } from '../services/VoiceEngine';
 
 const cleanMarkdown = (text: string): string => {
     if (!text) return '';
@@ -208,10 +211,60 @@ const renderInline = (text: string): React.ReactNode => {
 export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }) => {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+    const hasInterjected = useRef<Record<string, boolean>>({});
+    const tutor = useTutor();
 
     // Safely get steps, defaulting to empty array if undefined
     const steps = lesson.steps || [];
     const currentStep = steps[currentStepIndex];
+
+    // Activity Tracking
+    useEffect(() => {
+        const handleActivity = () => tutor.recordActivity();
+        window.addEventListener('mousemove', handleActivity);
+        window.addEventListener('keydown', handleActivity);
+        return () => {
+            window.removeEventListener('mousemove', handleActivity);
+            window.removeEventListener('keydown', handleActivity);
+        };
+    }, []);
+
+    // Proactive Sentience: Interject if user is stuck/idle
+    useEffect(() => {
+        if (!currentStep) return;
+        const stepKey = `${lesson.id}-${currentStepIndex}`;
+
+        const checkSentience = async () => {
+            const timeOnStep = tutor.getTimeOnStep();
+            const adaptiveContext = tutor.getAdaptiveContext();
+
+            // Trigger if: Not already interjected AND (Struggling OR Idle > 90s)
+            const isIdle = timeOnStep > 90;
+            const isStruggling = tutor.state.isStruggling;
+
+            if (!hasInterjected.current[stepKey] && (isIdle || isStruggling)) {
+                hasInterjected.current[stepKey] = true;
+                console.log('AI Sentience: Interjecting due to', isIdle ? 'idle' : 'struggle');
+
+                try {
+                    const nudge = await generatePersonaScript(
+                        currentStep.content,
+                        'Tutor',
+                        `${adaptiveContext}\nNOTE: You are interjecting PROACTIVELY because you notice they are stuck/idle. Break the fourth wall!`
+                    );
+
+                    if (nudge && nudge !== currentStep.content) {
+                        VoiceEngine.speak(nudge);
+                    }
+                } catch (e) {
+                    console.warn('Sentience nudge failed', e);
+                }
+            }
+        };
+
+        const interval = setInterval(checkSentience, 10000); // Check every 10s
+        return () => clearInterval(interval);
+    }, [currentStepIndex, lesson.id, currentStep]);
 
     if (!currentStep) {
         if (!steps.length) return <div className="text-white p-10">Legacy Content Mode</div>;

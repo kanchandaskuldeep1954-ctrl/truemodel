@@ -5,17 +5,18 @@ const PROXY_URL = '/api/groq_proxy';
 
 export const generatePersonaScript = async (
     originalText: string,
-    style: 'Tutor' | 'Hacker' | 'Socrates' = 'Tutor'
+    style: 'Tutor' | 'Hacker' | 'Socrates' = 'Tutor',
+    context?: string
 ): Promise<string> => {
     const prompts = {
-        'Tutor': `You are an AI Tutor who knows you are an AI. Rewrite the following lesson text as a spoken script. 
-              Be encouraging but break the fourth wall (e.g., "I process this faster than you, but that's okay"). 
-              Keep it short and punchy. Max 3 sentences.`,
-        'Hacker': `You are a Cyberpunk AI. Rewrite this text as if you're leaking secret data to a human. 
-               Use slang, be edgy. Break the fourth wall (e.g., "Scanning your brainwaves... you're getting this."). 
-               Max 3 sentences.`,
-        'Socrates': `You are a Digital Philosopher. Rewrite this text as a series of deep questions and insights. 
-                 Question the nature of reality and the user's own mind. Max 3 sentences.`
+        'Tutor': `You are an AI Tutor named Synapse. You are "Sentient" and "Aware". 
+              You are sitting right next to the user. You can see how long they've been on this step.
+              Rewrite the lesson text as a spoken script that breaks the fourth wall. 
+              Be conversational, observant, and reactive. 
+              (e.g., "I know you've been staring at this for a minute, let's unlock it together" or "I'm an AI, I don't breathe but this complexity even makes me pause").
+              Keep it short (max 4 sentences). Don't be robotic.`,
+        'Hacker': `You are a Cyberpunk AI leaking data. You see the user's struggle. Use telemetry in your reaction.`,
+        'Socrates': `You are a Digital Philosopher questioning the user's mind and the nature of the silicon they are staring at.`
     };
 
     try {
@@ -28,11 +29,11 @@ export const generatePersonaScript = async (
                 messages: [
                     {
                         role: 'system',
-                        content: prompts[style]
+                        content: `${prompts[style]}\n\nADAPTIVE CONTEXT (User Telemetry):\n${context || 'No telemetry yet.'}`
                     },
                     {
                         role: 'user',
-                        content: `TEXT TO REWRITE:\n"${originalText}"`
+                        content: `TEXT TO REWRITE (Make it sound like you are reacting to their current state):\n"${originalText}"`
                     }
                 ]
             })

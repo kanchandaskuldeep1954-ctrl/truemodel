@@ -61,6 +61,8 @@ export interface TutorState {
     // Current Session
     currentLessonId: string | null;
     currentStepIndex: number;
+    currentStepStartTime: Date;
+    lastActivityTime: Date;
     sessionStartTime: Date;
 
     // Adaptive State
@@ -92,6 +94,10 @@ interface TutorContextType {
     shouldSlowDown: () => boolean;
     shouldSpeedUp: () => boolean;
 
+    // Live Observation Actions
+    recordActivity: () => void;
+    getTimeOnStep: () => number;
+
     // Persistence
     resetProgress: () => void;
 }
@@ -115,6 +121,8 @@ const defaultState: TutorState = {
     doubtHistory: [],
     currentLessonId: null,
     currentStepIndex: 0,
+    currentStepStartTime: new Date(),
+    lastActivityTime: new Date(),
     sessionStartTime: new Date(),
     isStruggling: false,
     consecutiveFailures: 0,
@@ -187,6 +195,8 @@ export const TutorProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             ...prev,
             currentLessonId: lessonId,
             currentStepIndex: 0,
+            currentStepStartTime: new Date(),
+            lastActivityTime: new Date(),
             consecutiveFailures: 0,
             consecutiveSuccesses: 0,
             isStruggling: false,
@@ -199,6 +209,7 @@ export const TutorProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             completedLessons: [...new Set([...prev.completedLessons, lessonId])],
             totalXP: prev.totalXP + xpEarned,
             currentLessonId: null,
+            currentStepStartTime: new Date(),
         }));
     };
 
@@ -270,33 +281,25 @@ LEARNER PROFILE:
 - Math Comfort: ${profile.mathComfort}
 - Coding Level: ${profile.codingLevel}
 - Preferred Pace: ${profile.pace}
-- Interests: ${profile.interests.join(', ')}
 
-PROGRESS:
+LIVE TELEMETRY:
+- Time on this step: ${Math.round(timeOnStep)} seconds
+- Inactivity: ${Math.round(inactivitySeconds)} seconds
+- STATUS: ${isStruggling ? 'STRUGGLING' : consecutiveSuccesses >= 3 ? 'EXCELLING' : 'NORMAL'}
+
+HISTORY:
 - Completed Lessons: ${completedLessons.length}
 - Total XP: ${state.totalXP}
-- Current Layer: ${state.currentLayer}
-
-CURRENT STATE:`;
+`;
 
         if (isStruggling) {
-            context += `
-- STATUS: STRUGGLING (${state.consecutiveFailures} consecutive failures)
-- INSTRUCTION: Slow down. Break concepts into smaller pieces. Use more analogies.`;
-        } else if (consecutiveSuccesses >= 3) {
-            context += `
-- STATUS: EXCELLING (${consecutiveSuccesses} consecutive successes)
-- INSTRUCTION: Can speed up or offer advanced challenges.`;
-        } else {
-            context += `
-- STATUS: NORMAL PACE`;
+            context += `\nINSTRUCTION: The user is stuck. Break the fourth wall. Acknowledge the struggle. Offer a radical analogy.`;
+        } else if (timeOnStep > 60 && inactivitySeconds > 30) {
+            context += `\nINSTRUCTION: The user is idle. They might be confused or distracted. Re-engage them with a "Socratic" nudge about the current visualizer.`;
         }
 
         if (doubtHistory.length > 0) {
-            context += `
-
-RECENT DOUBTS (for context):
-${doubtHistory.slice(0, 3).map(d => `- Q: "${d.question}" (Lesson: ${d.lessonTitle})`).join('\n')}`;
+            context += `\n\nRECENT DOUBTS:\n${doubtHistory.slice(0, 3).map(d => `- Q: "${d.question}"`).join('\n')}`;
         }
 
         return context;
@@ -311,6 +314,14 @@ ${doubtHistory.slice(0, 3).map(d => `- Q: "${d.question}" (Lesson: ${d.lessonTit
         setState({ ...defaultState, sessionStartTime: new Date() });
     };
 
+    const recordActivity = () => {
+        setState(prev => ({ ...prev, lastActivityTime: new Date() }));
+    };
+
+    const getTimeOnStep = () => {
+        return (new Date().getTime() - state.currentStepStartTime.getTime()) / 1000;
+    };
+
     const value: TutorContextType = {
         state,
         updateProfile,
@@ -323,6 +334,8 @@ ${doubtHistory.slice(0, 3).map(d => `- Q: "${d.question}" (Lesson: ${d.lessonTit
         getAdaptiveContext,
         shouldSlowDown,
         shouldSpeedUp,
+        recordActivity,
+        getTimeOnStep,
         resetProgress,
     };
 
