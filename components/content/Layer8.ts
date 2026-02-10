@@ -2,274 +2,311 @@ import { Module } from '../../types';
 
 export const Layer8: Module = {
     id: 'layer8',
-    title: 'Layer 8: Sequences & RNNs',
+    title: 'Layer 8: The Dimension of Time',
     lessons: [
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 1: THE SEQUENCE (TIME)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l8.1.sequences',
-            title: 'The Problem with Sequences',
-            description: 'When order matters.',
-            xpReward: 200,
+            id: 'l8.1.time',
+            title: 'The Sequence',
+            description: 'Why static networks fail at reality.',
+            xpReward: 150,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Beyond Static Data',
+                    title: '🎯 The "Cat" Problem',
                     type: 'text',
-                    content: `CNNs are great for images—but images are STATIC.
+                    content: `Feedforward networks (Layer 5) and CNNs (Layer 7) have a fatal flaw:
+**They have no memory.**
+They treat every input as the first thing they've ever seen.
 
-What about:
-- **Text**: "I love this movie" vs "This movie, I love" (same words, same meaning)
-- **Speech**: Sounds that depend on what came before
-- **Time series**: Stock prices, weather, sensor readings
+But language depends on **Context.**
+- "I eat **Apples**." (Apple is a fruit).
+- "Apple **Computers**." (Apple is a company).
 
-**Order matters.** The SAME words in different order can mean different things.
-
-We need networks that REMEMBER what came before.`,
+The word "Apple" is identical. The **meaning** depends on the word before it.
+We need a network that remembers the past.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 Sequential Data',
+                    id: 'teach-sequence',
+                    title: '📚 Time Series Data',
                     type: 'text',
-                    content: `**The challenge with sequences:**
+                    content: `We are entering the **4th Dimension: Time.**
 
-"The cat sat on the ___"
+Examples of Sequential Data:
+1. **Audio:** A waveform where split-second changes matter.
+2. **Text:** Sentences where order determines meaning.
+3. **Stock Prices:** Today's price depends on yesterday's momentum.
+4. **Video:** A sequence of images.
 
-To predict the next word, you need to remember:
-- There's a cat
-- It's sitting
-- On something
-
-**Feedforward networks have no memory.** Each input is processed independently.
-
-We need a new architecture: **Recurrent Neural Networks (RNNs)**.
-
-The key idea: Pass information from one step to the next.`,
+**Key Concept:**
+To understand "Now", you must remember "Then".`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'explore-rnn',
+                    title: '🎮 The Memory Loop',
+                    type: 'interactive',
+                    content: `**Your Mission:**
+
+1. Type a sentence word by word.
+2. Watch the **Hidden State** (The glowing circle).
+3. **Notice:**
+   - When you type "The", the state changes.
+   - When you type "Cat", the state mixes "The" + "Cat".
+   - The network is carrying a "thought" forward in time.`,
+                    componentId: 'rnn-viz', // Reusing rnn-viz for basic sequence concept
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 How Do We Build Memory?',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `We need a new architecture.
+We need a neuron that connects to **ITSELF.**
 
-✅ Sequential data requires memory of past inputs
-
-✅ Feedforward networks can't remember—each input is independent
-
-✅ We need architectures that pass information between steps
-
-**Next:** Let's build a network with memory!`,
+This is the **Recurrent Neural Network (RNN).**
+It's a loop. It takes its own output from yesterday and feeds it back as input today.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 2: THE LOOP (RNN)
+        // ═══════════════════════════════════════════════════════════
         {
             id: 'l8.2.rnn',
-            title: 'Recurrent Neural Networks',
-            description: 'Memory in a loop.',
-            xpReward: 250,
+            title: 'The Loop',
+            description: 'A neuron that remembers.',
+            xpReward: 200,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Memory Solution',
+                    title: '🎯 The Feedback Loop',
                     type: 'text',
-                    content: `What if a network could remember what it just saw?
+                    content: `Imagine reading a book.
+You don't throw away your memory after every word.
+You keep a running "summary" in your head.
 
-The **Recurrent Neural Network (RNN)** has a simple but powerful idea:
+**The RNN Equation:**
+\`Current_Thought = Activation( New_Input + Old_Thought )\`
 
-Feed the output back as input to the next step.
-
-This creates a "loop" that carries information forward through the sequence.`,
+It mixes the **New Information** with the **Old Context**.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 How RNNs Work',
+                    id: 'teach-rnn-math',
+                    title: '📚 Unrolling the Loop',
                     type: 'text',
-                    content: `**At each time step t:**
+                    content: `It helps to think of an RNN as multiple copies of the same network, chained together.
 
-\`\`\`
-h_t = activation(W_h × h_{t-1} + W_x × x_t + b)
-\`\`\`
+**Time Step 1:**
+Input: "The" → Hidden State: [Vector representing "Determiner"]
 
-Where:
-- **x_t** = current input (e.g., current word)
-- **h_{t-1}** = previous hidden state (memory)
-- **h_t** = new hidden state (updated memory)
-- **W_h, W_x** = learned weights
+**Time Step 2:**
+Input: "Cat" + Hidden State ("Determiner") → Hidden State: [Vector representing "Subject"]
 
-**Step by step:**
-1. Read word "The" → Update hidden state
-2. Read word "cat" → Use previous state + current word → New state
-3. Read word "sat" → Use previous state + current word → New state
-4. ...
+**Time Step 3:**
+Input: "Sat" + Hidden State ("Subject") → Hidden State: [Vector representing "Action"]
 
-**The hidden state** accumulates information about everything seen so far.`,
+**Crucial Point:**
+We use the **SAME WEIGHTS** at every time step.
+Just like CNNs share weights across Space (Pixels), RNNs share weights across Time.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 RNN Visualization',
+                    id: 'explore-unroll',
+                    title: '🎮 Unrolling Time',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Click "Next Word" to step through the sentence
-2. Watch the hidden state update at each step
-3. Notice how it "remembers" previous words
+1. Click **"Unroll"**.
+2. See how the loop spreads out into a long chain.
+3. Feed in a sequence: "X", "Y", "Z".
+4. Watch the signal propagate down the chain.
 
-**Key insight:** The hidden state is like a summary of everything the network has seen. It's compressed memory.`,
+This looks like a really deep feedforward network!`,
                     componentId: 'rnn-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'quiz-rnn',
+                    title: '🧠 Understanding Check',
+                    type: 'quiz',
+                    content: `Let's verify.`,
+                    quizQuestion: 'In an RNN, what is the "Hidden State"?',
+                    quizOptions: [
+                        'A place to hide secret data',
+                        'The network\'s "memory" or "summary" of all previous inputs in the sequence',
+                        'The final output prediction',
+                        'The error signal'
+                    ],
+                    quizCorrectIndex: 1,
+                    quizExplanation: 'Correct. The hidden state is the vector that gets passed from t-1 to t. It represents the context so far.',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 The Curse of Amnesia',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `RNNs work great for short sentences.
+"The cat sat on the mat." (Easy).
 
-✅ RNNs have a "hidden state" that carries memory
+But what about a book?
+"Alice fell down the hole... [200 pages later] ... She woke up."
 
-✅ Each step combines new input with previous memory
-
-✅ The same weights are used at every time step
-
-**The problem:** What if the important context was 100 words ago? RNNs tend to "forget" old information.`,
+Can the RNN remember "Alice" from 200 pages ago?
+**No.**
+The signal fades. The gradients vanish.
+This is the **Vanishing Gradient Problem (Time Edition).**`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 3: THE FORGETTING (VANISHING GRADIENT)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l8.3.vanishing_rnn',
-            title: 'The Long-Term Memory Problem',
-            description: 'RNNs forget too quickly.',
-            xpReward: 200,
+            id: 'l8.3.vanishing',
+            title: 'The Amnesia',
+            description: 'Why RNNs fail at long stories.',
+            xpReward: 250,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Forgetting Problem',
+                    title: '🎯 Multiplying by < 1',
                     type: 'text',
-                    content: `Consider: "I grew up in France. ... ... [many sentences later] ... I speak fluent ___"
+                    content: `Remember Layer 6?
+If you multiply small numbers together, they vanish to zero.
 
-The answer is "French"—but the clue "France" was way back at the beginning!
+In an RNN, to learn a connection from Step 100 back to Step 1, you multiply the gradient 100 times.
 
-**RNNs struggle with long-range dependencies.** By the time we reach "I speak fluent ___", the memory of "France" has faded.
+**0.5¹⁰⁰ = 0.000000000000000000000000000001**
 
-Just like humans forgetting details from hours ago.`,
+The network literally **cannot physically learn** long-term dependencies.
+It forgets the start of the sentence before it reaches the end.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 Why RNNs Forget',
-                    type: 'text',
-                    content: `**The vanishing gradient problem strikes again!**
+                    id: 'explore-vanish-time',
+                    title: '🎮 Visualizing Amnesia',
+                    type: 'interactive',
+                    content: `**Your Mission:**
 
-When we backpropagate through time:
-- Gradients from step 100 must travel back to step 1
-- At each step, they get multiplied by the weight matrix
-- Small weights = gradients shrink exponentially
-
-After 50-100 steps, early inputs get essentially ZERO gradient.
-
-**The network can't learn to use long-ago information.**
-
-We need a better memory system.`,
+1. Feed a long sequence (20 words).
+2. Watch the **Gradient Signal** (Red) try to travel back from the end to the start.
+3. **Observe:** It fizzles out after ~10 steps.
+4. The network has "Goldfish Memory".`,
+                    componentId: 'rnn-viz', // Use gradient mode if available, or narrative explanation
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'teach-fix',
+                    title: '📚 We Need a Hard Drive',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `Standard RNNs rewrite their ENTIRE memory every step.
+It's like having to rewrite your entire diary every day from scratch.
+Eventually, you lose details.
 
-✅ RNNs struggle with long sequences (50+ steps)
+We need a way to:
+1. **Write** new info.
+2. **Read** old info.
+3. **Keep** info unchanged for a long time.
 
-✅ Vanishing gradients prevent learning long-range dependencies
+We need a digital circuit. We need the **LSTM.**`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 The Long Short-Term Memory',
+                    type: 'text',
+                    content: `LSTM stands for **Long Short-Term Memory.**
 
-✅ We need a smarter memory mechanism
+It was invented in 1997.
+It solved the sequence problem so well that it powered Google Translate, Siri, and Alexa for a decade (until Transformers arrived).
 
-**Solution:** LSTMs and GRUs—networks designed for long-term memory.`,
+Let's look inside this complex machine.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 4: THE GATE (LSTM)
+        // ═══════════════════════════════════════════════════════════
         {
             id: 'l8.4.lstm',
-            title: 'LSTM: Long Short-Term Memory',
-            description: 'The gated solution.',
+            title: 'The Gate',
+            description: 'Engineering a better memory.',
             xpReward: 300,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Selective Memory',
+                    title: '🎯 The Conveyor Belt',
                     type: 'text',
-                    content: `What if the network could CHOOSE what to remember and what to forget?
+                    content: `The Secret of LSTM is the **Cell State.**
 
-The **Long Short-Term Memory (LSTM)** cell has "gates" that control information flow:
+Think of it like a **Conveyor Belt** that runs straight through the entire chain.
+Information can flow along it unchanged for 1000 steps.
 
-- **Forget Gate**: What should I throw away?
-- **Input Gate**: What new information should I store?
-- **Output Gate**: What should I output right now?
-
-This selective memory lets LSTMs handle sequences of 1000+ steps!`,
+But we have **Gates** that can modify the belt:
+1. **Forget Gate:** Remove old info.
+2. **Input Gate:** Add new info.
+3. **Output Gate:** Read info.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
+                    id: 'teach-gates',
                     title: '📚 The Three Gates',
                     type: 'text',
-                    content: `**LSTM Cell Architecture:**
+                    content: `**1. The Forget Gate:**
+"Alice looked at the clock." -> "She went home."
+When we see "She", we can FORGET "Alice" (gender focus change) or keep "Alice" (subject)?
+The network **learns** what to forget.
 
-**1. Forget Gate (f):**
-"Should I keep the old memory?"
-- f = sigmoid(W_f × [h_{t-1}, x_t])
-- 0 = forget completely, 1 = remember fully
+**2. The Input Gate:**
+"It was raining."
+ADD "raining" to the context.
 
-**2. Input Gate (i):**
-"What new info should I add?"
-- i = sigmoid(W_i × [h_{t-1}, x_t])
-- Decides how much of the new input to store
-
-**3. Output Gate (o):**
-"What should I output now?"
-- o = sigmoid(W_o × [h_{t-1}, x_t])
-- Filters the memory for current output
-
-**Cell State (C):** The "conveyor belt" that carries information unchanged across steps.`,
+**3. The Output Gate:**
+Predict the next word based on the current context.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 LSTM Gate Visualization',
+                    id: 'explore-lstm',
+                    title: '🎮 Controlling the Flow',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Adjust the Forget, Input, and Output gate values
-2. Watch how they affect the cell state and output
-3. Try: High forget + Low input = Memory fades
-4. Try: Low forget + High input = New info dominates
+1. Adjust the **Forget Gate** (Open/Close).
+   - If Closed (0), memory is wiped.
+   - If Open (1), memory is kept perfect.
+2. Adjust the **Input Gate**.
+3. Watch the **Cell State** preserve the signal over long distances.
 
-**Key insight:** The gates let the network decide WHAT to remember from possibly thousands of previous words.`,
+**This engineering marvel solved the Vanishing Gradient problem.**`,
                     componentId: 'lstm-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Layer 8 Complete!',
+                    id: 'layer-complete',
+                    title: '🏆 Layer 8 Complete!',
                     type: 'text',
-                    content: `**🎉 You've completed Layer 8: Sequences & RNNs!**
+                    content: `**🎉 You've completed Layer 8: Sequences.**
 
 **Your Journey:**
-✅ Sequential data → Order matters, need memory
-✅ RNNs → Hidden state carries memory forward
-✅ Long-term problem → Gradients vanish over long sequences
-✅ LSTMs → Gates control what to remember/forget
+1. **Sequences:** Time adds a 4th dimension. Context matters.
+2. **RNNs:** Loops that carry memory forward.
+3. **Amnesia:** Gradients vanish over time.
+4. **LSTMs:** Gated cells that can protect memories for the long haul.
 
-**Historical impact:** LSTMs powered Google Translate, Siri, and speech recognition for years.
+**The End of an Era:**
+LSTMs were King... until 2017.
+They had one weakness: **They are slow.** You have to process Step 1 before Step 2. You can't parallelize key.
 
-**But there's a catch:** RNNs/LSTMs process one word at a time—they can't parallelize.
-
-**Next Up:** Layer 9 - Attention
-What if we could look at ALL words at once?`,
+**Next Up: Layer 9 - Attention.**
+"Attention Is All You Need." The paper that changed everything.`,
                     requiredToAdvance: true
                 }
             ]

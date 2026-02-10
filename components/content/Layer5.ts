@@ -2,215 +2,335 @@ import { Module } from '../../types';
 
 export const Layer5: Module = {
     id: 'layer5',
-    title: 'Layer 5: Deep Learning',
+    title: 'Layer 5: Deep Learning — The Blame Game',
     lessons: [
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 1: THE NETWORK (ARCHITECTURE)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l5.1.hidden_layers',
-            title: 'Hidden Layers: The Secret Sauce',
-            description: 'Where the magic happens.',
-            xpReward: 250,
+            id: 'l5.1.network',
+            title: 'The Network',
+            description: 'Building the brain.',
+            xpReward: 150,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Beyond Single Neurons',
+                    title: '🎯 The Power of Connection',
                     type: 'text',
-                    content: `In Layer 4, we hit a wall: single neurons can't solve XOR.
+                    content: `A single ant is stupid. A colony is brilliant.
+A single neuron is a simple calculator. A network of them is ChatGPT.
 
-The solution? Add a **hidden layer** between input and output.
+**Deep Learning** is simply the study of what happens when you connect THOUSANDS of neurons together.
 
-Hidden layers are the "secret sauce" of deep learning. They learn intermediate representations that make complex problems solvable.
-
-Let's see how they work.`,
+WE DON'T write the code for how to identify a cat.
+We just build the network structure, and let the network **figure it out.**`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 What Hidden Layers Do',
+                    id: 'teach-arch',
+                    title: '📚 The Architecture',
                     type: 'text',
-                    content: `A hidden layer **transforms the input** into a new representation.
+                    content: `A standard neural network has 3 parts:
 
-**Example: Solving XOR**
+1. **Input Layer:** Receives raw data (pixels of an image).
+2. **Hidden Layers:** The "magic" middle. They digest the data.
+   - Shallow Network: 1 hidden layer.
+   - **Deep Network:** Many hidden layers (Deep Learning).
+3. **Output Layer:** The final answer (is it a Cat or Dog?).
 
-Input Layer: [0, 1] and [1, 0]
-Hidden Layer: Learns to detect "one input is high"
-Output Layer: Easy to classify now!
-
-**What the hidden layer learns:**
-- Layer 1: Edges, colors, textures
-- Layer 2: Shapes, patterns
-- Layer 3: Objects, faces
-- Layer 4: Scenes, concepts
-
-Each layer builds on the previous one, learning increasingly abstract features.`,
+**Why "Hidden"?**
+Because we (inputs) don't see them, and the world (outputs) doesn't see them. They are the private internal thoughts of the machine.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Hidden Layer Visualization',
+                    id: 'explore-arch',
+                    title: '🎮 Build a Deep Network',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. See the original XOR points (not separable)
-2. Watch how the hidden layer transforms them
-3. In the new space, they ARE separable!
+1. Add **Hidden Layers** (make it deeper).
+2. Add **Neurons** (make it wider).
+3. Watch how the web of connections grows.
 
-**Key insight:** The hidden layer "warps" the space so a simple line can solve the problem.`,
-                    componentId: 'hidden-layer-viz',
+**Notice:**
+Every neuron in Layer 1 connects to EVERY neuron in Layer 2.
+This is called a **Dense** or **Fully Connected** network.`,
+                    componentId: 'deep-net-lesson', // Specific lesson for architecture viz
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'bridge',
+                    title: '🌉 How Does It Think?',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `We built the structure. Now, how does it think?
 
-✅ Hidden layers transform inputs into learnable representations
+Information flows in one direction:
+**Input → Hidden → Output**
 
-✅ Each layer learns increasingly abstract features
-
-✅ More layers = deeper network = can learn more complex patterns
-
-**Why "deep" learning?** Because the network has many LAYERS deep.`,
+This is called the **Forward Pass.**
+It's like a rumor spreading through a crowd, changing slightly at each person.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 2: THE FLOW (FORWARD PASS)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l5.2.forward_pass',
-            title: 'Forward Propagation',
-            description: 'Data flows forward.',
+            id: 'l5.2.forward',
+            title: 'The Flow',
+            description: 'How a thought acts.',
             xpReward: 200,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Following the Data',
+                    title: '🎯 Ripple Effect',
                     type: 'text',
-                    content: `When you feed an image into a neural network, what happens?
+                    content: `Imagine dropping a pebble in a pond.
+The ripples move outward, affecting everything in their path.
 
-The data flows FORWARD through each layer:
-Input → Hidden Layer 1 → Hidden Layer 2 → ... → Output
+In a neural network, the "pebble" is the Input Data.
+The "ripples" are the activations firing through the layers.
 
-This is called **Forward Propagation**.
-
-Let's trace the journey of a single data point.`,
+If even ONE weight changes in the first layer, it can completely change the final result.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 The Forward Pass Algorithm',
+                    id: 'teach-forward',
+                    title: '📚 The Math of Thinking',
                     type: 'text',
-                    content: `For each layer:
+                    content: `The Forward Pass is simple but repetitive:
 
-**1. Weighted Sum:**
-\`z = W × input + bias\`
+**Layer 1:**
+\`h1 = ReLU( w1*input + b1 )\`
 
-**2. Activation:**
-\`output = activation(z)\`
+**Layer 2:**
+\`h2 = ReLU( w2*h1 + b2 )\`
 
-**Example 2-layer network:**
-\`\`\`
-Input: [2]
-Layer 1: z₁ = 3×2 + (-1) = 5, a₁ = ReLU(5) = 5
-Layer 2: z₂ = 2×5 + 0 = 10, a₂ = 10
-Output: 10
-\`\`\`
+**Output:**
+\`y = Sigmoid( w3*h2 + b3 )\`
 
-Each layer's output becomes the next layer's input.
+It's just **Matrix Multiplication → Activation → Repeat.**
 
-**The entire network is just this repeated many times!**`,
+This chain reaction transforms "Raw Pixels" into "Probability of Cat".`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'explore-forward',
+                    title: '🎮 Trace the Signal',
+                    type: 'interactive',
+                    content: `**Your Mission:**
+
+1. Click **"Feed Forward"**.
+2. Watch the signal (glowing lines) travel from left to right.
+3. Hover over a neuron to see its **Activation Value**.
+   - **Bright Green:** High activation (Firing!)
+   - **Dark:** Zero activation (Dead/ReLU'd).
+4. See how the pattern changes layer by layer.`,
+                    componentId: 'deep-net-lesson', // Reusing deep net lesson but focusing on signal flow
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 The Problem',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `Great. Our network can "think" (Forward Pass).
 
-✅ Forward pass: data flows input → hidden → output
+But initially, its thoughts are garbage.
+We feed in a Cat image, and it says "Dog: 99%".
 
-✅ Each layer: weighted sum → activation
+It made a mistake.
+Now... **Who is to blame?**
 
-✅ The final output is the network's prediction
-
-**Next:** How does the network LEARN from its mistakes?`,
+Which of the 1,000,000 weights caused the error?
+This allows us to introduce the most important algorithm in history.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 3: THE BLAME (BACKPROPAGATION)
+        // ═══════════════════════════════════════════════════════════
         {
             id: 'l5.3.backprop',
-            title: 'Backpropagation: The Learning Engine',
-            description: 'Errors flow backward.',
+            title: 'The Blame Game',
+            description: 'The hardest concept in AI, explained simply.',
             xpReward: 300,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Credit Assignment Problem',
+                    title: '🎯 "Who Did This?"',
                     type: 'text',
-                    content: `The network made a prediction. It was wrong.
+                    content: `Imagine a factory line makes a defective car.
+The boss comes down and screams: **"Who screwed up?"**
 
-But there are MILLIONS of weights. Which ones caused the error?
+- The Output guy says: "Not me, I just assembled what Layer 2 gave me!"
+- Layer 2 says: "I just processed what Layer 1 gave me!"
+- Layer 1 says: "I just took the Raw Steel!"
 
-This is the **Credit Assignment Problem**: figuring out which weights to blame.
-
-The solution is **Backpropagation**—the most important algorithm in deep learning.`,
+**Backpropagation** is the process of walking BACKWARDS from the error to assign blame.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 How Backpropagation Works',
+                    id: 'teach-backprop',
+                    title: '📚 Backpropagation',
                     type: 'text',
-                    content: `**The Key Insight:** Use the chain rule from calculus.
+                    content: `**1. Calculate Loss:**
+"You said Dog. It was Cat. Error = HUGE."
 
-**1. Compute the error at the output**
-   error = prediction - actual
+**2. Output Layer Blame:**
+"Neuron A, you fired too hard. Decrease your weights."
 
-**2. Propagate error BACKWARD through each layer**
-   - How much did Layer N contribute to the error?
-   - How much did Layer N-1 contribute to Layer N's error?
-   - And so on...
+**3. Hidden Layer Blame:**
+"Neuron B, you told Neuron A to fire. You are also to blame. Decrease YOUR weights."
 
-**3. Update each weight based on its contribution**
-   weight = weight - learning_rate × gradient
+**4. Repeat:**
+The blame (Gradient) flows BACKWARDS all the way to the start.
 
-**Why it works:** Each weight gets a "gradient" telling it exactly how much it contributed to the error.
-
-The chain rule lets us compute this efficiently, even for networks with billions of weights.`,
+Technical term: **Chain Rule of Calculus.**`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Backpropagation Visualization',
+                    id: 'explore-backprop',
+                    title: '🎮 Visualizing The Blame',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Watch the forward pass (blue arrows, left to right)
-2. See the error computed at the output
-3. Watch the backward pass (red arrows, right to left)
-4. Notice how gradients propagate back through each layer
-
-**This is how AI learns!** Error flows backward, and each weight adjusts.`,
+1. Run a Forward Pass. (Error is calculated).
+2. Click **"Backpropagate"**.
+3. Watch the **Red Pulse** travel backwards (Right to Left).
+4. **Notice:**
+   - The red pulse is the **Gradient** (Blame).
+   - Weights with high blame get changed MORE.
+   - Weights with zero blame are left alone.`,
                     componentId: 'backprop-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Layer 5 Complete!',
+                    id: 'quiz-backprop',
+                    title: '🧠 Understanding Check',
+                    type: 'quiz',
+                    content: `This determines if you understand Deep Learning.`,
+                    quizQuestion: 'In Backpropagation, which direction does the data flow vs. the error signal?',
+                    quizOptions: [
+                        'Both flow forward (Input → Output)',
+                        'Both flow backward (Output → Input)',
+                        'Data flows Forward. Error flows Backward.',
+                        'Data flows Backward. Error flows Forward.'
+                    ],
+                    quizCorrectIndex: 2,
+                    quizExplanation: 'Correct! We "Think Forward" (Data), but we "Learn Backward" (Error).',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 The Cycle of Life',
                     type: 'text',
-                    content: `**🎉 You've completed Layer 5: Deep Learning!**
+                    content: `We have the Forward Pass (Guessing).
+We have the Backward Pass (Learning).
+
+Now we just do this... **forever.**
+
+This cycle is called the **Training Loop.**`,
+                    requiredToAdvance: true
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 4: THE LOOP (TRAINING)
+        // ═══════════════════════════════════════════════════════════
+        {
+            id: 'l5.4.training',
+            title: 'The Training Loop',
+            description: 'From idiot to genius in 100 epochs.',
+            xpReward: 300,
+            steps: [
+                {
+                    id: 'hook',
+                    title: '🎯 One Million Times',
+                    type: 'text',
+                    content: `A human child needs to see a cat a few times to learn "cat".
+A neural network needs to see it **thousands** of times.
+
+It improves incrementally.
+- Epoch 1: Accuracy 10% (Random guessing)
+- Epoch 10: Accuracy 40%
+- Epoch 100: Accuracy 99%
+
+This repetitive grind is what burns all that electricity in data centers.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'teach-loop',
+                    title: '📚 The Algorithm',
+                    type: 'text',
+                    content: `\`\`\`python
+for epoch in range(1000):
+    # 1. Forward Pass (Predict)
+    prediction = model(input)
+    
+    # 2. Calculate Loss (Measure Error)
+    loss = MSE(prediction, target)
+    
+    # 3. Backward Pass (Find Gradients)
+    gradients = backprop(loss)
+    
+    # 4. Optimizer Step (Update Weights)
+    weights = weights - lr * gradients
+\`\`\`
+
+**Memorize these 4 steps.** They are the heartbeat of AI.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'explore-loop',
+                    title: '🎮 Watch It Learn',
+                    type: 'interactive',
+                    content: `**Your Mission:**
+
+1. Click **"Start Training"**.
+2. Watch the **Epoch Counter** go up.
+3. Watch the **Loss Graph** go DOWN.
+4. Watch the **Accuracy** go UP.
+5. See the decision boundary slowly morph until it perfectly separates the data.
+
+**You are witnessing Intelligence being created from Math.**`,
+                    componentId: 'training-loop',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'code-challenge-loop',
+                    title: '💻 Code Challenge: The Loop',
+                    type: 'interactive', // Changed to interactive/code hybrid
+                    content: `**Write the Training steps.**
+
+Order the steps correctly to make the AI learn.`,
+                    componentId: 'deep-net-code-challenge', // Generic code challenge ID
+                    initialCode: `def train_step(model, input, target):
+    # 1. ?
+    # 2. ?
+    # 3. ?
+    # 4. ?
+    pass`,
+                    hints: ["Forward -> Loss -> Backward -> Update"],
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'layer-complete',
+                    title: '🏆 Layer 5 Complete!',
+                    type: 'text',
+                    content: `**🎉 You've completed Layer 5: Deep Learning.**
 
 **Your Journey:**
-✅ Hidden layers → Transform inputs to learnable representations
-✅ Forward propagation → Data flows input → output
-✅ Backpropagation → Errors flow output → input to update weights
+1. **Network:** Connecting layers of neurons.
+2. **Forward:** Signals ripple forward using matrices & activation.
+3. **Backprop:** Error ripples backward to assign blame.
+4. **Training:** Repeating this loop until the loss is zero.
 
-**The big picture:**
-Deep learning = Forward pass + Compute loss + Backprop gradients + Update weights + Repeat
+**You now know how the "Core Engine" works.**
 
-This same algorithm trains everything from image classifiers to ChatGPT.
-
-**Next Up:** Layer 6 - Training Deep Networks
-What challenges arise when networks get REALLY deep?`,
+**Next Up: Layer 6 - Training Dynamics.**
+We know the steps... but why is training actually so hard? (Overfitting, Vanishing Gradients, Learning Rates).`,
                     requiredToAdvance: true
                 }
             ]

@@ -104,6 +104,8 @@ import { LstmViz } from './lessons/Part8/LstmViz';
 import { QkvViz } from './lessons/Part8/QkvViz';
 import { TokenPredictionViz } from './lessons/Part8/TokenPredictionViz';
 import { VoiceControl } from './VoiceControl';
+import { QuizCheck } from './QuizCheck';
+import { AITutor } from './AITutor';
 import { useTutor } from '../context/TutorContext';
 import { generatePersonaScript } from '../services/groq';
 import { VoiceEngine } from '../services/VoiceEngine';
@@ -217,6 +219,7 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
     const [isFinishing, setIsFinishing] = useState(false);
+    const [showTutor, setShowTutor] = useState(false);
     const hasInterjected = useRef<Record<string, boolean>>({});
     const tutor = useTutor();
 
@@ -324,9 +327,20 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
                     >
                         <div className="mb-4 flex items-center justify-between">
                             <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest border border-indigo-500/30 px-2 py-1 rounded bg-indigo-500/10">
-                                {currentStep.type} Phase
+                                {currentStep.type === 'quiz' ? '🧠 Quiz' : currentStep.type} Phase
                             </span>
-                            <VoiceControl text={cleanMarkdown(currentStep.content)} />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowTutor(!showTutor)}
+                                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${showTutor
+                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700'
+                                        }`}
+                                >
+                                    <span>🤖</span> {showTutor ? 'Hide Tutor' : 'Ask AI Tutor'}
+                                </button>
+                                <VoiceControl text={cleanMarkdown(currentStep.content)} />
+                            </div>
                         </div>
                         <h1 className="text-4xl font-black mb-4">{currentStep.title}</h1>
                         <div className="text-lg text-slate-300 mb-10 leading-relaxed max-w-3xl">{renderMarkdown(currentStep.content)}</div>
@@ -602,6 +616,39 @@ export const LessonEngine: React.FC<LessonEngineProps> = ({ lesson, onComplete }
                             </div>
                         )}
 
+                        {/* Quiz Renderer */}
+                        {currentStep.type === 'quiz' && currentStep.quizQuestion && currentStep.quizOptions && (
+                            <div className="mb-10">
+                                <QuizCheck
+                                    question={currentStep.quizQuestion}
+                                    options={currentStep.quizOptions}
+                                    correctIndex={currentStep.quizCorrectIndex ?? 0}
+                                    explanation={currentStep.quizExplanation ?? 'Correct!'}
+                                    onComplete={handleStepComplete}
+                                />
+                            </div>
+                        )}
+
+                        {/* AI Tutor Slide-In Panel */}
+                        <AnimatePresence>
+                            {showTutor && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="mb-8 overflow-hidden"
+                                >
+                                    <div className="border border-indigo-500/20 rounded-2xl overflow-hidden shadow-2xl shadow-indigo-500/5">
+                                        <AITutor
+                                            currentTopic={`${lesson.title} → ${currentStep.title}: ${currentStep.content.substring(0, 200)}`}
+                                            lessonId={lesson.id}
+                                            lessonTitle={lesson.title}
+                                            stepType={currentStep.type}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Action Area */}
                         <div className="flex justify-between items-center">

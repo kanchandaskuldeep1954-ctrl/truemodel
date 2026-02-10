@@ -1,7 +1,7 @@
 
 export interface LessonStep {
   id: string;
-  type: 'animation' | 'interactive' | 'challenge' | 'text';
+  type: 'animation' | 'interactive' | 'challenge' | 'text' | 'quiz';
   title: string;
   content: string; // Description or text content
   componentId?: string; // ID for specific interactive component (e.g., 'binary-switches')
@@ -11,6 +11,11 @@ export interface LessonStep {
   initialCode?: string;
   expectedOutput?: string;
   hints?: string[];
+  // Quiz Fields
+  quizQuestion?: string;
+  quizOptions?: string[];
+  quizCorrectIndex?: number;
+  quizExplanation?: string;
 }
 
 export interface Lesson {

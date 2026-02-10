@@ -2,241 +2,306 @@ import { Module } from '../../types';
 
 export const Layer7: Module = {
     id: 'layer7',
-    title: 'Layer 7: Convolutional Neural Networks',
+    title: 'Layer 7: Computer Vision — The Shared Eye',
     lessons: [
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 1: THE FILTER (CONVOLUTION)
+        // ═══════════════════════════════════════════════════════════
         {
             id: 'l7.1.convolution',
-            title: 'The Convolution Operation',
-            description: 'How computers see patterns.',
-            xpReward: 250,
+            title: 'The Filter',
+            description: 'The mathematical operation that gave computers sight.',
+            xpReward: 150,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Problem with Images',
+                    title: '🎯 The "Where is Waldo" Problem',
                     type: 'text',
-                    content: `A 256×256 image has 196,608 pixels.
+                    content: `Imagine I ask you to find a specific face in a crowd.
 
-If we connect every pixel to every neuron (fully connected), we get BILLIONS of weights.
+You don't look at the entire crowd at once.
+You scan your eyes across the image, looking for the pattern (glasses, hat) **locally**.
 
-That's too many—the network would overfit instantly.
+When you find the pattern, your brain signals "MATCH!"
 
-**Convolutional Neural Networks (CNNs)** solve this with a clever trick: **weight sharing** using filters.`,
+This act of **Scanning** and **Matching** is exactly what a Convolution is.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 What is Convolution?',
+                    id: 'teach-conv',
+                    title: '📚 The Sliding Window',
                     type: 'text',
-                    content: `**Convolution** slides a small filter (kernel) across the image:
+                    content: `In a standard Neural Network (Layer 5), every pixel connects to every neuron.
+- 4K Image = 8,000,000 inputs.
+- Layer 1 = Billions of weights.
+- Result: **Overfitting & Explosion.**
 
-**Filter (3×3):**
-\`\`\`
-[-1  0  1]
-[-2  0  2]
-[-1  0  1]
-\`\`\`
+**The Convolutional Solution:**
+Instead of looking at the whole image, we use a tiny 3x3 grid of weights called a **Filter** (or Kernel).
 
-**At each position:**
-1. Place the filter on the image
-2. Multiply corresponding elements
-3. Sum them all → One output value
-4. Move to the next position → Repeat
+We verify if the filter matches top-left.
+Then we slide it one pixel right.
+Then we slide it again.
 
-**The key insight:** The SAME filter is used everywhere.
-- 9 weights instead of millions
-- Detects the SAME pattern anywhere in the image
-- A "edge detector" finds edges whether they're top-left or bottom-right`,
+We use the **SAME** 9 weights to scan the ENTIRE image.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Convolution Visualizer',
+                    id: 'explore-conv',
+                    title: '🎮 The Scanner',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Watch the filter slide across the input image
-2. See how each position produces one output value
-3. The output (feature map) shows where the pattern was detected
+1. Watch the **3x3 Filter** (Yellow box) slide over the input image.
+2. At every spot, it does a Dot Product (Pixel × Weight).
+3. **High Score** = Pattern Match (Bright white in output).
+4. **Low Score** = No match (Black in output).
 
-**Notice:** Bright spots in the output = the filter found its pattern there!`,
+This output grid is called a **Feature Map**. It tells us WHERE the pattern was found.`,
                     componentId: 'convolution-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'bridge',
+                    title: '🌉 One Filter, One Feature',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `We just saw one filter scanning the image.
+Maybe it was looking for a "Vertical Edge".
 
-✅ Convolution slides a filter across the image
+But an image is more than just vertical edges.
+It has Horizontal edges. Corners. Curves. Colors.
 
-✅ Same filter = same weights everywhere = detects patterns anywhere
-
-✅ Output is a "feature map" showing where the pattern was found
-
-**Why it matters:** This is why CNNs can recognize a cat whether it's in the corner or the center of the photo.`,
+To see the whole picture, we need a **Gallery of Filters.**`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 2: THE FEATURES (HIERARCHY)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l7.2.filters',
-            title: 'Filters: Pattern Detectors',
-            description: 'What filters actually detect.',
+            id: 'l7.2.features',
+            title: 'The Features',
+            description: 'Building reality from scratch.',
             xpReward: 200,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Different Filters, Different Features',
+                    title: '🎯 Edges -> Shapes -> Objects',
                     type: 'text',
-                    content: `Each filter detects a DIFFERENT pattern.
+                    content: `How do you recognize a Car?
+- It has Wheels (Circles).
+- It has Windows (Rectangles).
 
-In a trained CNN:
-- Early layers: edges, colors, textures
-- Middle layers: shapes, parts (eyes, wheels)
-- Deep layers: objects, faces, concepts
+How do you recognize a Rectangle?
+- It has Vertical lines.
+- It has Horizontal lines.
 
-The network LEARNS which filters to use during training.`,
+This is the **Hierarchy of Vision.**
+Deep Learning mimics this perfectly.
+- Layer 1 finds Lines.
+- Layer 2 finds Shapes.
+- Layer 3 finds Cars.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 Classic Filter Types',
+                    id: 'teach-filters',
+                    title: '📚 The Filter Bank',
                     type: 'text',
-                    content: `**Edge Detection (Sobel):**
-\`\`\`
-[-1 0 1]     Detects vertical edges
-[-2 0 2]
-[-1 0 1]
-\`\`\`
+                    content: `In a real CNN, we don't pick the filters.
+The AI **LEARNS** them.
 
-**Blur (Average):**
-\`\`\`
-[1/9 1/9 1/9]     Smooths the image
-[1/9 1/9 1/9]
-[1/9 1/9 1/9]
-\`\`\`
+- **Edge Filter:** \`[-1, 1]\` (Detects contrast changes)
+- **Blur Filter:** \`[0.1, ...]\` (Smooths noise)
+- **Sharpen Filter:** Enhances details.
 
-**Sharpen:**
-\`\`\`
-[0  -1  0]     Enhances edges
-[-1  5 -1]
-[0  -1  0]
-\`\`\`
-
-**In a CNN:** The network learns its OWN filters that best help classify images.`,
+A typical CNN learns 32 filters in the first layer, then 64, then 128...`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Filter Gallery',
+                    id: 'explore-filters',
+                    title: '🎮 The Filter Gallery',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Select different filter types (Edge, Blur, Sharpen, Emboss)
-2. See how each filter transforms the test image
-3. Notice what features each filter highlights
+1. Click different filters (Edge, Sharpen, Emboss).
+2. See "What the AI Sees".
+3. **Edge Detection** makes everything black except the outlines. This is PERFECT for the AI to understand magnitude and shape.
 
-**Key insight:** CNNs learn 100s of filters like these—each detecting something useful.`,
+**Insight:** The AI doesn't see "pixels". It sees "edges" and "textures".`,
                     componentId: 'filter-gallery',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'quiz-filters',
+                    title: '🧠 Understanding Check',
+                    type: 'quiz',
+                    content: `Let's verify.`,
+                    quizQuestion: 'Why do we use the SAME filter to scan the entire image (Weight Sharing)?',
+                    quizOptions: [
+                        'Because we are lazy',
+                        'To save memory',
+                        'Because a feature (like a vertical edge) is the same concept regardless of where it appears in the image',
+                        'Because pixels are square'
+                    ],
+                    quizCorrectIndex: 2,
+                    quizExplanation: 'Exactly. "Translation Invariance". A cat in the top-left is still a cat. We don\'t need new weights to learn "corner-cat".',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 The Curse of Detail',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `We have feature maps.
+But they are HUGE. They are the same size as the image!
 
-✅ Different filters detect different patterns
+If we keep them this big, our network will be slow and will overfit to tiny details.
+("Oh no, the cat moved 1 pixel to the right! I don't know what it is anymore!")
 
-✅ Edge filters find boundaries, blur filters smooth
-
-✅ CNNs LEARN which filters best solve the task
-
-**Real application:** ImageNet-trained CNNs have learned filters for eyes, fur, wheels, text—all automatically!`,
+We need to zoom out. We need to **Squint.**`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 3: THE SHRINK (POOLING)
+        // ═══════════════════════════════════════════════════════════
         {
             id: 'l7.3.pooling',
-            title: 'Pooling: Shrinking & Summarizing',
-            description: 'Making features robust.',
+            title: 'The Shrink',
+            description: 'Why squinting helps you see better.',
             xpReward: 200,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Size Problem',
+                    title: '🎯 Information Density',
                     type: 'text',
-                    content: `After convolution, we still have a large feature map.
+                    content: `Imagine a 4x4 block of pixels.
+- Pixel 1: "I found an edge! (Score 0.9)"
+- Pixel 2: "I found a weak edge (Score 0.1)"
+- Pixel 3: "Nothing (Score 0.0)"
+- Pixel 4: "Nothing (Score 0.0)"
 
-We want to:
-1. Reduce the size (less computation)
-2. Make features more robust to small shifts
-3. Focus on "what" was detected, not "exactly where"
-
-**Pooling** summarizes regions of the feature map.`,
+Do we need to keep all 4 numbers?
+No. All that matters is: **"Yes, there is an edge in this general area."**`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 How Pooling Works',
+                    id: 'teach-pool',
+                    title: '📚 Max Pooling',
                     type: 'text',
-                    content: `**Max Pooling (most common):**
-- Take a 2×2 window
-- Output the MAXIMUM value
-- Move to the next window
+                    content: `**Pooling** is the process of downsampling.
+The most common type is **Max Pooling (2x2).**
 
-\`\`\`
-[1 3]     Max Pooling
-[5 2]  →  [6]
-becomes the maximum: 5? No wait...
-\`\`\`
+Rules:
+1. Look at a 2x2 grid (4 numbers).
+2. **Keep only the BIGGEST number.**
+3. Throw away the rest.
 
-Actually: [1,3,5,2] → max = 5
-
-**Why max pooling works:**
-- If a feature was detected ANYWHERE in the window, we keep it
-- A cat eye detected at (10,10) vs (11,11) both become feature present
-
-**Average Pooling:** Takes the average instead of max.`,
+**Result:**
+- Image size shrinks by half (Width/2, Height/2).
+- Computation drops by 75%.
+- The network becomes robust to small movements.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Pooling Visualization',
+                    id: 'explore-pool',
+                    title: '🎮 Shrink the Map',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Toggle between Max Pooling and Average Pooling
-2. Step through the pooling operation
-3. Watch how a 4×4 becomes 2×2
+1. See the input grid (4x4).
+2. Watch the **Red Box** find the Max value in each region.
+3. See the output grid (2x2).
 
-**Notice:** Max pooling keeps the strongest activations. Average pooling smooths them.`,
+**Notice:** The "Max" value is preserved. The spatial information is compressed. We traded "Where" for "What".`,
                     componentId: 'pooling-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Layer 7 Complete!',
+                    id: 'bridge',
+                    title: '🌉 Putting It All Together',
                     type: 'text',
-                    content: `**🎉 You've completed Layer 7: Convolutional Neural Networks!**
+                    content: `We have the pieces:
+1. **Convolution** (Feature Extraction)
+2. **ReLU** (Non-Linearity)
+3. **Pooling** (Downsampling)
+
+If we stack these in a sandwich, we get the **Convolutional Neural Network (CNN).**
+
+Lets build one that can actually read.`,
+                    requiredToAdvance: true
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 4: THE EYE (CAPSTONE)
+        // ═══════════════════════════════════════════════════════════
+        {
+            id: 'l7.4.capstone',
+            title: 'The Eye',
+            description: 'Building a machine that can read.',
+            xpReward: 300,
+            steps: [
+                {
+                    id: 'hook',
+                    title: '🎯 The "Hello World" of Vision',
+                    type: 'text',
+                    content: `In 1998, Yann LeCun built LeNet-5.
+It was the first CNN to read handwritten digits on checks.
+
+Today, this is the "Hello World" of AI: **MNIST.**
+Identifying handwritten digits (0-9).
+
+Let's look inside a trained brain as it reads a number.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'teach-architecture',
+                    title: '📚 The Architecture',
+                    type: 'text',
+                    content: `**The Standard ConvNet Recipe:**
+
+1. **Input:** 28x28 grayscale image.
+2. **Conv Layer 1:** Finds edges/curves.
+3. **Pool Layer 1:** Shrinks to 14x14.
+4. **Conv Layer 2:** Finds loops/lines.
+5. **Pool Layer 2:** Shrinks to 7x7.
+6. **Flatten:** Turn grid into a long vector.
+7. **Dense Layer:** Connect everything to 10 outputs (0-9).`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'explore-mnist',
+                    title: '🎮 The Digit Recognizer',
+                    type: 'interactive',
+                    content: `**Your Mission:**
+
+1. **Draw** a digit (0-9) in the box.
+2. Watch the **Probabilities** update in real-time.
+3. Try to trick it!
+   - Draw a sloppy '7'.
+   - Draw a weird '4'.
+
+**Observe:** The bar graph shows the AI's confidence. This is the Softmax output!`,
+                    componentId: 'digit-recognizer-lesson',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'layer-complete',
+                    title: '🏆 Layer 7 Complete!',
+                    type: 'text',
+                    content: `**🎉 You've completed Layer 7: Computer Vision.**
 
 **Your Journey:**
-✅ Convolution → Sliding filters detect patterns
-✅ Learned filters → Network discovers useful features
-✅ Pooling → Shrinks and summarizes feature maps
+1. **Convolution:** Scanning with shared weights.
+2. **Features:** Constructing complex objects from simple edges.
+3. **Pooling:** Summarizing for robustness.
+4. **CNNs:** The architecture that drives self-driving cars, FaceID, and medical imaging.
 
-**The CNN Architecture:**
-Input → [Conv → ReLU → Pool] × N → Fully Connected → Output
-
-This architecture powers:
-- Image classification (Is this a cat?)
-- Object detection (Where are the cars?)
-- Face recognition (Who is this?)
-
-**Next Up:** Layer 8 - Recurrent Neural Networks
-How do we process SEQUENCES like text and audio?`,
+**Next Up: Layer 8 - Recurrent Neural Networks.**
+Images are static. But the world is a movie.
+How do we handle Time?`,
                     requiredToAdvance: true
                 }
             ]

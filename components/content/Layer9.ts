@@ -2,270 +2,286 @@ import { Module } from '../../types';
 
 export const Layer9: Module = {
     id: 'layer9',
-    title: 'Layer 9: Attention Mechanisms',
+    title: 'Layer 9: The Attention Revolution',
     lessons: [
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 1: THE BOTTLENECK (CONTEXT)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l9.1.attention_idea',
-            title: 'The Attention Idea',
-            description: 'Focus on what matters.',
-            xpReward: 250,
+            id: 'l9.1.bottleneck',
+            title: 'The Bottleneck',
+            description: 'Why LSTMs weren\'t enough.',
+            xpReward: 150,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 The Problem with Sequential Memory',
+                    title: '🎯 The Cocktail Party Problem',
                     type: 'text',
-                    content: `RNNs process one word at a time, left to right.
+                    content: `Imagine being at a loud party.
+You are listening to ONE person (Attention), while tuning out 100 others (Noise).
 
-But humans don't read this way!
+Suddenly, someone across the room says your name.
+You INSTANTLY shift focus.
 
-When you see: "The animal didn't cross the street because it was too tired"
-
-Your eyes jump to "animal" when reading "it"—you ATTEND to the relevant word.
-
-What if neural networks could do the same?`,
+RNNs/LSTMs can't do this.
+They have to process every single conversation inthe room sequentially to find your name.
+By the time they get to it, they've forgotten who called.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 What is Attention?',
+                    id: 'teach-bottleneck',
+                    title: '📚 The Sequential Trap',
                     type: 'text',
-                    content: `**Attention** lets the model "look at" all words at once and decide which are relevant.
+                    content: `LSTMs were great, but they had a fatal flaw: **Sequential Processing.**
 
-**The intuition:**
-- For each word, compute a "relevance score" with every other word
-- Words with high scores get more "attention"
-- When predicting "it" refers to → high attention on "animal"
+To read the 100th word, you MUST process the 99 words before it.
+1. **Slow:** You can't use parallel GPUs efficiently.
+2. **Distance Limit:** Information travels step-by-step. It fades.
 
-**Benefits:**
-1. **No distance limit** - Can attend to word 1 while at word 100
-2. **Parallelizable** - All attention scores computed at once
-3. **Interpretable** - We can SEE what the model is "looking at"`,
+**2017 Changed Everything.**
+A paper called *"Attention Is All You Need"* proposed a radical idea:
+**"Throw away the RNN. Throw away the Recurrence. Just look at EVERYTHING at once."**`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'explore-bottleneck',
+                    title: '🎮 Parallel vs Sequential',
+                    type: 'interactive',
+                    content: `**Your Mission:**
+
+1. **Sequential Mode (RNN):** Watch the red dot jump from word to word. Slow.
+2. **Parallel Mode (Transformer):** Watch the ENTIRE sentence light up at once. Instant.
+
+This parallelization is why ChatGPT can read a whole book in seconds.`,
+                    componentId: 'attention-heatmap', // Using heatmap to show "all at once" concept
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 Meaning is Context',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `If I say "Bank", what do I mean?
+- A river bank?
+- A financial bank?
 
-✅ Attention lets models focus on relevant words regardless of distance
+You can't know unless you look at the OTHER words.
+"I sat by the **bank**." (River)
+"I deposited cash at the **bank**." (Money)
 
-✅ It's computed in parallel (fast on GPUs)
-
-✅ We can visualize attention to interpret the model
-
-**Big idea:** Attention is the key breakthrough that led to Transformers and modern AI.`,
+To understand a word, the AI must **Attend** to the relevant context words.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 2: THE MECHANISM (QKV)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l9.2.self_attention',
-            title: 'Self-Attention',
-            description: 'Every word looks at every word.',
-            xpReward: 300,
+            id: 'l9.2.qkv',
+            title: 'The Mechanism',
+            description: 'Query, Key, and Value.',
+            xpReward: 200,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 Looking at Yourself',
+                    title: '🎯 The Database Analogy',
                     type: 'text',
-                    content: `In **Self-Attention**, each word in a sentence asks:
+                    content: `How does a Database work?
+1. You verify a **Query** ("Find User: element123").
+2. The DB checks all **Keys** (IDs).
+3. When it finds a match, it returns the **Value** (User Data).
 
-"Who in this sentence should I pay attention to?"
-
-The answer forms an **attention pattern**—a map showing which words relate to which.
-
-Let's see it in action.`,
+**Self-Attention works the exact same way.**
+Every word gives off 3 signals:
+- **Query:** What am I looking for? (e.g., "I am an adjective, looking for a noun to modify")
+- **Key:** What do I contain? (e.g., "I am a noun")
+- **Value:** Here is my meaning.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 Computing Self-Attention',
+                    id: 'teach-qkv',
+                    title: '📚 The Dot Product',
                     type: 'text',
-                    content: `For each pair of words (i, j), we compute an attention score:
+                    content: `How do we match a Query to a Key?
+**The Dot Product.** 
 
-**score(i, j)** = How relevant is word j to word i?
+If the Query vector aligns with the Key vector, the result is a HIGH number (High Attraction).
+If they are perpendicular, the result is ZERO (No Attention).
 
-**High scores mean:**
-- "it" → "animal" (pronoun refers to noun)
-- "street" → "cross" (object of verb)
-- "tired" → "animal" (describes the animal)
+**The Formula:**
+\`Attention = Softmax( (Q · K) / √d ) * V\`
 
-**The attention weights:** score → softmax → weights that sum to 1
-
-**The output:** weighted sum of all word representations
-
-Each word's new representation includes information from all relevant words!`,
+(Don't panic. It just means: Find the matches, convert to %, and grab the values).`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'explore',
-                    title: '🎮 Attention Heatmap',
+                    id: 'explore-qkv',
+                    title: '🎮 Inside the Engine',
                     type: 'interactive',
                     content: `**Your Mission:**
 
-1. Hover over each word in the sentence
-2. See which OTHER words it attends to (highlighted)
-3. Find the pronoun "it" and see what it attends to
-
-**Key insight:** Notice how "it" strongly attends to "animal"—the model has learned coreference!`,
-                    componentId: 'attention-heatmap',
-                    requiredToAdvance: true
-                },
-                {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
-                    type: 'text',
-                    content: `**What you learned:**
-
-✅ Self-attention computes word-to-word relevance scores
-
-✅ Each word gets a new representation based on all related words
-
-✅ The model learns what "relevant" means during training
-
-**The magic:** After training, the attention patterns match human intuition about language!`,
-                    requiredToAdvance: true
-                }
-            ]
-        },
-        {
-            id: 'l9.3.qkv',
-            title: 'Query, Key, Value',
-            description: 'The math of attention.',
-            xpReward: 300,
-            steps: [
-                {
-                    id: 'hook',
-                    title: '🎯 The Library Metaphor',
-                    type: 'text',
-                    content: `Imagine a library:
-- You have a **Query**: "I want a book about cats"
-- Books have **Keys**: "Animals", "Dogs", "Cats", "Cooking"
-- You find matching keys and get the **Values**: the actual book content
-
-**QKV Attention works the same way:**
-- Query = What am I looking for?
-- Keys = What does each word offer?
-- Values = The actual information to retrieve`,
-                    requiredToAdvance: true
-                },
-                {
-                    id: 'teach',
-                    title: '📚 The QKV Formula',
-                    type: 'text',
-                    content: `For each word, we create 3 vectors:
-
-**Q (Query)** = "What am I looking for?"
-**K (Key)** = "What can others match against?"
-**V (Value)** = "What information do I provide?"
-
-**The Attention Formula:**
-
-\`\`\`
-Attention(Q, K, V) = softmax(Q × K^T / √d) × V
-\`\`\`
-
-**Step by step:**
-1. Q × K^T = Dot product of all queries with all keys (similarity scores)
-2. / √d = Scale to prevent huge values
-3. softmax = Convert to probabilities
-4. × V = Weight-sum the values
-
-**Output:** Each word's representation enriched with relevant context.`,
-                    requiredToAdvance: true
-                },
-                {
-                    id: 'explore',
-                    title: '🎮 QKV Visualization',
-                    type: 'interactive',
-                    content: `**Your Mission:**
-
-1. See how each word creates Q, K, V vectors
-2. Watch the Query-Key dot products (similarity scores)
-3. See how Values are combined based on attention weights
-
-**Key insight:** The dot product measures similarity: similar Q and K = high attention.`,
+1. Select the word **"Bank"**.
+2. See its **Query Vector**.
+3. See the **Key Vectors** of other words ("River", "Money").
+4. Watch the **Dot Product** spike when it matches the relevant context.
+5. The model "attends" to the right meaning!`,
                     componentId: 'qkv-viz',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Key Takeaways',
+                    id: 'quiz-qkv',
+                    title: '🧠 Understanding Check',
+                    type: 'quiz',
+                    content: `This is the heart of Transformers.`,
+                    quizQuestion: 'In Self-Attention, what determines how much focus Word A puts on Word B?',
+                    quizOptions: [
+                        'The distance between them',
+                        'The similarity (dot product) between Word A\'s Query and Word B\'s Key',
+                        'The random initialization',
+                        'The order they appear in the sentence'
+                    ],
+                    quizCorrectIndex: 1,
+                    quizExplanation: 'Correct! It\'s a content-based lookup. Position doesn\'t matter initially.',
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 Multi-Head Attention',
                     type: 'text',
-                    content: `**What you learned:**
+                    content: `One attention mechanism is good.
+But what if a word has MULTIPLE relationships?
 
-✅ Query = what I need, Key = what I offer, Value = my content
+"The **apple** fell from the **tree**."
+- Relationship 1: Physics (Gravity).
+- Relationship 2: Biology (Fruit source).
 
-✅ Attention score = Q · K (dot product = similarity)
-
-✅ Output = weighted sum of Values based on attention scores
-
-**Formula to remember:**
-Attention(Q,K,V) = softmax(QK^T/√d) × V`,
+We need **Multi-Head Attention.**
+8 (or 96) separate attention brains running in parallel, each looking for different things.`,
                     requiredToAdvance: true
                 }
             ]
         },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 3: THE MAP (HEATMAP)
+        // ═══════════════════════════════════════════════════════════
         {
-            id: 'l9.4.multihead',
-            title: 'Multi-Head Attention',
-            description: 'Different perspectives.',
+            id: 'l9.3.heatmap',
+            title: 'The Map',
+            description: 'Seeing what the brain sees.',
             xpReward: 250,
             steps: [
                 {
                     id: 'hook',
-                    title: '🎯 One Head is Not Enough',
+                    title: '🎯 The Alien Language',
                     type: 'text',
-                    content: `A single attention head can only focus on ONE type of relationship.
+                    content: `If we look inside a Transformer's brain, what do we see?
+We see **Heatmaps.**
 
-But language has MANY relationships:
-- Syntactic: subject-verb agreement
-- Semantic: word meanings
-- Positional: nearby words matter
-- Coreference: what pronouns refer to
+A grid showing the connection strength between every pair of words.
+- X-axis: All words.
+- Y-axis: All words.
+- Color: Strength of Attention.
 
-**Solution:** Run MULTIPLE attention heads in parallel!`,
+This is the "Connectome" of the thought process.`,
                     requiredToAdvance: true
                 },
                 {
-                    id: 'teach',
-                    title: '📚 Multi-Head Attention',
-                    type: 'text',
-                    content: `**Multi-Head Attention:**
+                    id: 'explore-heatmap',
+                    title: '🎮 Reading the Mind',
+                    type: 'interactive',
+                    content: `**Your Mission:**
 
-Run d_head separate attention mechanisms in parallel:
-- Head 1 might learn subject-verb relationships
-- Head 2 might learn adjective-noun relationships
-- Head 3 might learn long-distance dependencies
-- ...
-
-**Each head has its own Q, K, V weight matrices.**
-
-**Final output:** Concatenate all heads → Linear layer → Combined representation
-
-**In practice:** GPT-4 has 96 attention heads per layer!`,
+1. Hover over words in the sentence: *"The animal didn't cross the street because it was too tired."*
+2. **Find "it".**
+3. Look at the heatmap.
+4. **Question:** Does "it" connect stronger to "animal" or "street"?
+5. **Answer:** The model KNOWS "it" refers to the animal because it is "tired". A street can't be tired.`,
+                    componentId: 'attention-heatmap',
                     requiredToAdvance: true
                 },
                 {
-                    id: 'summary',
-                    title: '💡 Layer 9 Complete!',
+                    id: 'teach-viz',
+                    title: '📚 Interpretability',
                     type: 'text',
-                    content: `**🎉 You've completed Layer 9: Attention Mechanisms!**
+                    content: `This is one of the few places in Deep Learning where we can actually **Interpret** the results.
+
+We can inspect GPT-4 and ask: "Why did you say that?"
+And look at the attention map to see exactly which source documents it was focusing on.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'bridge',
+                    title: '🌉 No Position?',
+                    type: 'text',
+                    content: `Wait. I said Attention looks at "everything at once".
+
+If I say:
+"Dog bites Man" vs "Man bites Dog".
+To the Attention mechanism, these look IDENTICAL. It knows "Dog", "Man", "Bites" exist, but not the order.
+
+We have lost the sequence!
+We need to hack it back in.`,
+                    requiredToAdvance: true
+                }
+            ]
+        },
+        // ═══════════════════════════════════════════════════════════
+        // CHAPTER 4: THE POSITION (ENCODING)
+        // ═══════════════════════════════════════════════════════════
+        {
+            id: 'l9.4.position',
+            title: 'The Positional Hack',
+            description: 'Injecting order back into chaos.',
+            xpReward: 300,
+            steps: [
+                {
+                    id: 'hook',
+                    title: '🎯 Teleportation',
+                    type: 'text',
+                    content: `Attention is like teleportation. It jumps instantly from word 1 to word 1000.
+But it has no concept of "Next" or "Previous".
+
+**The Solution:**
+We add a "timestamp" to every word.
+- "The" + [Pos 1]
+- "Cat" + [Pos 2]
+
+We literally ADD a vector to the word embedding representing its location.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'teach-pe',
+                    title: '📚 Positional Encodings',
+                    type: 'text',
+                    content: `We don't just add numbers (1, 2, 3...). As numbers get big, they distort the data.
+
+We use **Sine Waves.**
+- Low frequency waves for general location.
+- High frequency waves for precise position.
+
+This allows the model to understand "Relative Position" (Word A is far from Word B) without numbers exploding to infinity.`,
+                    requiredToAdvance: true
+                },
+                {
+                    id: 'layer-complete',
+                    title: '🏆 Layer 9 Complete!',
+                    type: 'text',
+                    content: `**🎉 You've completed Layer 9: Attention.**
 
 **Your Journey:**
-✅ Attention → Focus on relevant words regardless of distance
-✅ Self-Attention → Each word attends to all words
-✅ QKV → Query-Key similarity selects Values
-✅ Multi-Head → Multiple perspectives captured in parallel
+1. **The Bottleneck:** Sequential processing is slow and forgetful.
+2. **Attention:** Parallel processing that connects everything.
+3. **QKV:** The database query mechanism for context.
+4. **Positional Encoding:** Adding order back into the mix.
 
-**The revolution:** Attention replaced RNNs because:
-1. Unlimited distance (no forgetting)
-2. Fully parallelizable (fast training)
-3. Better results on every benchmark
+**You now have all the components.**
+- Embeddings
+- Feed Forward Layers
+- Attention
+- Residual Connections (from Residuals)
 
-**Next Up:** Layer 10 - Transformers & GPT
-Putting it all together into the architecture behind ChatGPT!`,
+**Next Up: Layer 10 - Transformers & GPT.**
+We will assemble these Legos into the machine that passed the Bar Exam.`,
                     requiredToAdvance: true
                 }
             ]
